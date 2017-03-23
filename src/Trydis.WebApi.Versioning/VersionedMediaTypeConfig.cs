@@ -1,4 +1,6 @@
+using System;
 using System.Linq;
+using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Web.Http;
@@ -11,11 +13,18 @@ namespace Trydis.WebApi.Versioning
     /// </summary>
     public static class VersionedMediaTypeConfig
     {
-        public static void RegisterTypedFormatters(HttpConfiguration config)
+        public static void RegisterTypedFormatters(HttpConfiguration config, JsonMediaTypeFormatter defaultFormatter = null, params Assembly[] assembliesToScan)
         {
-            var types = Assembly.GetCallingAssembly().GetTypes();
+            var jsonMediaTypeFormatter = defaultFormatter ?? config.Formatters.JsonFormatter;
+            if (jsonMediaTypeFormatter == null)
+                throw new ArgumentNullException(nameof(defaultFormatter), $"{nameof(defaultFormatter)} should be set when Formatters.JsonFormatter is null");
 
-            foreach (var type in types)
+            if (assembliesToScan == null || assembliesToScan.Length == null)
+            {
+                assembliesToScan = new[] {Assembly.GetCallingAssembly()};
+            }
+
+            foreach (var type in assembliesToScan.SelectMany(a=> a.GetTypes()))
             {
                 var customAttributes = type.GetCustomAttributes(true);
                 if (customAttributes.Length == 0) continue;
@@ -28,8 +37,8 @@ namespace Trydis.WebApi.Versioning
                         .Any(typeFormatter => typeFormatter.CanReadType(type) && typeFormatter.CanWriteType(type));
 
                     if (!formatterExists)
-                    {
-                        config.Formatters.Add(new TypedJsonMediaTypeFormatter(type, new MediaTypeHeaderValue(matchingCustomAttribute.MediaType)));
+                    {                        
+                        config.Formatters.Add(new TypedJsonMediaTypeFormatter(type, new MediaTypeHeaderValue(matchingCustomAttribute.MediaType), jsonMediaTypeFormatter));
                     }
                 }
             }

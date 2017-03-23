@@ -1,4 +1,6 @@
 ﻿using System.Web.Http;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Owin;
 
 namespace Trydis.WebApi.Versioning.Sample
@@ -12,6 +14,16 @@ namespace Trydis.WebApi.Versioning.Sample
             // Configure Web API for self-host. 
             var config = new HttpConfiguration();
             config.MapHttpAttributeRoutes();
+
+
+            var formatter = config.Formatters.JsonFormatter;
+            formatter.SerializerSettings = new JsonSerializerSettings
+            {
+                //Formatting = Formatting.Indented,
+                TypeNameHandling = TypeNameHandling.None,
+                NullValueHandling = NullValueHandling.Ignore,
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            };
 
             VersionedMediaTypeConfig.RegisterTypedFormatters(config);
             VersionConstraint.MediaTypePattern = "^application/vnd.versioningsample.([a-zA-Z]+)-v([0-9]+)\\+json$";

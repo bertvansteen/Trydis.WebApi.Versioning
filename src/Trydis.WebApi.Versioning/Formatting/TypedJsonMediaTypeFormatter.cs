@@ -12,12 +12,28 @@ namespace Trydis.WebApi.Versioning.Formatting
     {
         private readonly Type _resourceType;
 
-        public TypedJsonMediaTypeFormatter(Type resourceType, MediaTypeHeaderValue mediaType)
+        public TypedJsonMediaTypeFormatter(Type resourceType, MediaTypeHeaderValue mediaType, JsonMediaTypeFormatter formatter)
         {
             _resourceType = resourceType;
+            CopyValues(formatter);
+
 
             SupportedMediaTypes.Clear();
             SupportedMediaTypes.Add(mediaType);
+        }
+
+        private void CopyValues(JsonMediaTypeFormatter formatter)
+        {
+            SerializerSettings = formatter.SerializerSettings;
+            UseDataContractJsonSerializer = formatter.UseDataContractJsonSerializer;
+            Indent = formatter.Indent;
+            SupportedEncodings.Clear();
+            foreach (var supportedEncoding in formatter.SupportedEncodings)
+            {
+                SupportedEncodings.Add(supportedEncoding);
+            }
+            RequiredMemberSelector = formatter.RequiredMemberSelector;
+            MaxDepth = formatter.MaxDepth;
         }
 
         private bool CompareTypes(Type type)
